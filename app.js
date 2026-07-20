@@ -9,7 +9,29 @@ const state = {
   items: [],          // [{id, data, updatedAt}] 복호화된 상태 (잠금 해제 중에만)
   editingId: null,
   filter: "all",      // 종류 필터: all | fav | <type>
+  vaultName: "",      // 금고 표시 이름 (암호화 저장, 잠금 해제 후에만)
 };
+
+// 금고 이름 로드/저장 (암호화 prefs)
+async function loadPrefs() {
+  state.vaultName = "";
+  try {
+    const rec = await vaultDB.getPrefs();
+    if (rec && rec.ct) {
+      const p = await decryptItem(state.vaultKey, rec);
+      state.vaultName = p.vaultName || "";
+    }
+  } catch (e) { /* prefs 없거나 실패 → 기본값 */ }
+}
+async function saveVaultName(name) {
+  const enc = await encryptItem(state.vaultKey, { vaultName: name });
+  await vaultDB.setPrefs(enc);
+  state.vaultName = name;
+  updateHeaderName();
+}
+function updateHeaderName() {
+  $("#vault-name").textContent = state.vaultName || "Goblin Keeper";
+}
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -101,6 +123,7 @@ async function handleUnlock(e) {
     }
     state.vaultKey = key;
     await loadAllItems(); // 개별 항목 실패는 내부에서 건너뜀 → 입장은 됨
+    await loadPrefs();
     enterMain();
   } finally {
     setBusy("#unlock-submit", false);
@@ -122,6 +145,7 @@ async function handleBioUnlock() {
     if (!bio) return;
     state.vaultKey = await bioUnlock(bio);
     await loadAllItems();
+    await loadPrefs();
     enterMain();
   } catch (e) {
     if (e.name === "NotAllowedError")
@@ -135,6 +159,7 @@ function enterMain() {
   $("#search").value = "";
   state.filter = "all";
   bannerDismissed = false;
+  updateHeaderName();
   renderList();
   renderBackupBanner();
   showScreen("main");
@@ -145,6 +170,7 @@ function enterMain() {
 function lockVault() {
   state.vaultKey = null;
   state.items = [];
+  state.vaultName = "";
   state.editingId = null;
   closeEditor();
   $("#list").innerHTML = "";
@@ -409,7 +435,8 @@ function openEditor(id, forcedType) {
 
   $("#btn-delete").style.display = it ? "inline-block" : "none";
   $("#editor").classList.add("open");
-  $("#f-title").focus();
+  $("#sheet-body").scrollTop = 0;   // 항상 위에서부터
+  $("#f-title").focus({ preventScroll: true });
 }
 
 function closeEditor() {
@@ -719,7 +746,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#form-unlock").addEventListener("submit", handleUnlock);
   $("#form-editor").addEventListener("submit", saveItem);
   $("#btn-add").addEventListener("click", openPicker);
-  $("#btn-lock").addEventListener("click", lockVault);
+  $("#btn-lock").addEventListener("click", () => { if (confirm(t("lock.confirm"))) lockVault(); });
   $("#btn-close-editor").addEventListener("click", closeEditor);
   $("#btn-delete").addEventListener("click", deleteCurrentItem);
   $("#search").addEventListener("input", renderList);
@@ -784,7 +811,12 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#btn-settings").addEventListener("click", async () => {
     await renderBioSettings();
     await renderBackupStatus();
+    $("#vault-name-input").value = state.vaultName || "";
     $("#dlg-settings").showModal();
+  });
+  $("#btn-save-name").addEventListener("click", async () => {
+    await saveVaultName($("#vault-name-input").value.trim());
+    showToast(t("settings.nameSaved"));
   });
   $("#btn-bio-unlock").addEventListener("click", handleBioUnlock);
   $("#btn-forgot").addEventListener("click", resetVault);

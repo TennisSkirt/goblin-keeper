@@ -47,6 +47,9 @@ const vaultDB = {
   // 백업 정보(마지막 백업 시각) — 백업 파일에는 포함되지 않는 별도 키
   getBackupInfo: () => tx("meta", "readonly", (s) => reqValue(s.get("backup"), {})),
   setBackupInfo: (info) => tx("meta", "readwrite", (s) => { s.put(info, "backup"); return {}; }),
+  // 환경설정(금고 이름 등) — 암호화된 blob {iv,ct}
+  getPrefs: () => tx("meta", "readonly", (s) => reqValue(s.get("prefs"), {})),
+  setPrefs: (p) => tx("meta", "readwrite", (s) => { s.put(p, "prefs"); return {}; }),
   // 생체인증 자격증명 + 볼트키를 감싼 레코드
   getBio: () => tx("meta", "readonly", (s) => reqValue(s.get("bio"), {})),
   setBio: (b) => tx("meta", "readwrite", (s) => { s.put(b, "bio"); return {}; }),

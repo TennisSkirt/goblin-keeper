@@ -60,10 +60,6 @@
         </button>
       </form>
 
-      <div class="reassure">
-        <span class="ic" data-icon="shield-check" data-size="15"></span>
-        <span data-i18n="setup.reassure"></span>
-      </div>
     </div>
   </section>
 
@@ -98,7 +94,7 @@
     <header>
       <div class="desk-goblin"><img src="assets/gk-desk.png" alt="문지기" /></div>
       <div class="head-text">
-        <div class="serif name">Goblin Keeper</div>
+        <div class="serif name" id="vault-name">Goblin Keeper</div>
         <div class="sub" id="head-sub"></div>
       </div>
       <button class="icon-btn" id="btn-settings" title="설정"><span class="ic" data-icon="gear" data-size="21"></span></button>
@@ -131,32 +127,35 @@
     <!-- 편집 바텀시트 -->
     <div id="editor">
       <form class="sheet" id="form-editor">
-        <div class="grabber"></div>
-        <div class="sheet-head">
-          <div class="badge" id="editor-badge"></div>
-          <h2 class="serif" id="editor-title"></h2>
-          <button type="button" class="icon-btn fav-btn" id="btn-fav" title="즐겨찾기"><span class="ic" data-icon="star" data-size="20"></span></button>
-          <button type="button" class="btn-x" id="btn-close-editor"><span class="ic" data-icon="x" data-size="20"></span></button>
+        <div class="sheet-top">
+          <div class="sheet-head">
+            <div class="badge" id="editor-badge"></div>
+            <h2 class="serif" id="editor-title"></h2>
+            <button type="button" class="icon-btn fav-btn" id="btn-fav" title="즐겨찾기"><span class="ic" data-icon="star" data-size="20"></span></button>
+            <button type="button" class="btn-x" id="btn-close-editor"><span class="ic" data-icon="x" data-size="20"></span></button>
+          </div>
         </div>
 
-        <div id="reuse-warn" class="reuse-warn" style="display:none">
-          <span class="ic" data-icon="alert" data-size="18"></span><span id="reuse-warn-text"></span>
+        <div class="sheet-body" id="sheet-body">
+          <div id="reuse-warn" class="reuse-warn" style="display:none">
+            <span class="ic" data-icon="alert" data-size="18"></span><span id="reuse-warn-text"></span>
+          </div>
+
+          <label for="f-title" data-i18n="editor.title"></label>
+          <input id="f-title" data-i18n-ph="editor.titlePh" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+
+          <div id="editor-fields"></div>
+          <div id="editor-barcode"></div>
+
+          <div class="custom-head">
+            <span data-i18n="custom.section"></span>
+            <button type="button" class="btn-addfield" id="btn-add-custom"><span class="ic" data-icon="plus" data-size="15"></span><span data-i18n="custom.add"></span></button>
+          </div>
+          <div id="editor-custom"></div>
+
+          <label for="f-memo" data-i18n="editor.memo"></label>
+          <textarea id="f-memo"></textarea>
         </div>
-
-        <label for="f-title" data-i18n="editor.title"></label>
-        <input id="f-title" data-i18n-ph="editor.titlePh" autocapitalize="off" autocorrect="off" spellcheck="false" required />
-
-        <div id="editor-fields"></div>
-        <div id="editor-barcode"></div>
-
-        <div class="custom-head">
-          <span data-i18n="custom.section"></span>
-          <button type="button" class="btn-addfield" id="btn-add-custom"><span class="ic" data-icon="plus" data-size="15"></span><span data-i18n="custom.add"></span></button>
-        </div>
-        <div id="editor-custom"></div>
-
-        <label for="f-memo" data-i18n="editor.memo"></label>
-        <textarea id="f-memo"></textarea>
 
         <div class="sheet-actions">
           <button type="button" class="btn-danger-outline" id="btn-delete"><span class="ic" data-icon="trash" data-size="20"></span><span data-i18n="editor.delete"></span></button>
@@ -169,6 +168,13 @@
   <!-- ============ 설정 ============ -->
   <dialog id="dlg-settings">
     <h2 class="serif" data-i18n="settings.title"></h2>
+
+    <div class="dlg-section-title" data-i18n="settings.nameSection"></div>
+    <div class="name-row">
+      <input id="vault-name-input" data-i18n-ph="settings.namePh" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="24" />
+      <button type="button" class="btn-gold" id="btn-save-name" data-i18n="settings.nameSave"></button>
+    </div>
+    <p class="hint" style="margin:6px 2px 0" data-i18n="settings.nameHint"></p>
 
     <div class="dlg-section-title" data-i18n="settings.backupSection"></div>
     <div class="set-card">

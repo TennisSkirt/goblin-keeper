@@ -21,6 +21,7 @@ const I18N = {
     "lock.submit": "잠금 해제",
     "lock.bio": "지문 / Face ID로 신원 확인",
     "lock.forgot": "암구호를 잊으셨나요? 금고 초기화",
+    "lock.confirm": "금고를 잠그시겠습니까?",
     "reset.confirm": "⚠️ 마스터 암구호는 복구할 수 없습니다.\n\n금고를 완전히 초기화하고 처음부터 새로 시작할까요?\n저장된 모든 항목이 삭제됩니다. (백업 파일이 있으면 나중에 복원 가능)",
     "reset.done": "금고가 초기화되었습니다. 새 암구호를 정하세요.",
 
@@ -49,6 +50,11 @@ const I18N = {
     "editor.confirmDelete": "이 예치품을 버릴까요?",
 
     "settings.title": "설정",
+    "settings.nameSection": "금고 이름",
+    "settings.namePh": "예: 우리집 금고",
+    "settings.nameSave": "저장",
+    "settings.nameHint": "홈 화면 상단에 표시돼요. (암호화되어 저장, 잠금 해제 후에만 보임)",
+    "settings.nameSaved": "금고 이름을 저장했어요",
     "settings.backupSection": "백업 · 열쇠 사본",
     "settings.lastBackup": "마지막 백업",
     "settings.backupNever": "아직 백업한 적이 없습니다.",
@@ -183,6 +189,7 @@ const I18N = {
     "lock.submit": "ロック解除",
     "lock.bio": "指紋 / Face ID で本人確認",
     "lock.forgot": "合言葉をお忘れですか？金庫をリセット",
+    "lock.confirm": "金庫をロックしますか？",
     "reset.confirm": "⚠️ マスター合言葉は復元できません。\n\n金庫を完全にリセットして最初からやり直しますか？\n保存された項目はすべて削除されます。（バックアップがあれば後で復元できます）",
     "reset.done": "金庫をリセットしました。新しい合言葉を決めてください。",
 
@@ -211,6 +218,11 @@ const I18N = {
     "editor.confirmDelete": "この預かり品を捨てますか？",
 
     "settings.title": "設定",
+    "settings.nameSection": "金庫の名前",
+    "settings.namePh": "例: わが家の金庫",
+    "settings.nameSave": "保存",
+    "settings.nameHint": "ホーム画面の上部に表示されます。（暗号化して保存、解錠後のみ表示）",
+    "settings.nameSaved": "金庫の名前を保存しました",
     "settings.backupSection": "バックアップ · 合鍵",
     "settings.lastBackup": "前回のバックアップ",
     "settings.backupNever": "まだバックアップしていません。",

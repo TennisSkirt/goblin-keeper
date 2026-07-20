@@ -285,23 +285,27 @@ header .head-text .sub { font-size: 11px; color: var(--muted); margin-top: 2px; 
   box-shadow: 0 10px 26px rgba(201,154,40,.5), inset 0 1px 0 rgba(255,255,255,.5);
 }
 
-/* ---------- 편집 바텀시트 ---------- */
+/* ---------- 편집 모달 (위에서부터, 내부 스크롤) ---------- */
 #editor {
-  position: fixed; inset: 0; display: none;
-  align-items: flex-end; justify-content: center;
+  position: fixed; inset: 0; display: none; z-index: 40;   /* 헤더(z:5) 위로 */
+  align-items: flex-start; justify-content: center;
   background: rgba(0,0,0,.5); backdrop-filter: blur(1px);
 }
 #editor.open { display: flex; }
-@keyframes gkSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes gkSheet { from { transform: translateY(-14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .sheet {
-  width: min(430px, 100vw); max-height: 92dvh; overflow-y: auto;
-  background: var(--surface); border-top: 1px solid var(--line);
-  border-radius: 26px 26px 0 0; padding: 12px 20px 26px;
-  box-shadow: 0 -16px 40px rgba(0,0,0,.4);
-  animation: gkSheet .35s cubic-bezier(.2,.9,.3,1);
+  width: min(460px, 100vw); height: 100dvh;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  box-shadow: 0 10px 40px rgba(0,0,0,.4);
+  animation: gkSheet .28s cubic-bezier(.2,.9,.3,1);
 }
-.sheet .grabber { width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 14px; }
-.sheet-head { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+.sheet-top { flex: none; padding: 16px 20px 4px; border-bottom: 1px solid var(--line); }
+.sheet-body {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 16px 20px 10px;
+}
+.sheet-head { display: flex; align-items: center; gap: 11px; }
 .sheet-head .badge {
   width: 44px; height: 44px; border-radius: 13px; flex: none;
   display: flex; align-items: center; justify-content: center;
@@ -319,7 +323,11 @@ header .head-text .sub { font-size: 11px; color: var(--muted); margin-top: 2px; 
   display: flex; align-items: center; justify-content: center;
 }
 .pw-row .pw-actions button.muted { color: var(--muted); }
-.sheet-actions { display: flex; gap: 11px; margin-top: 4px; }
+.sheet-actions {
+  flex: none; display: flex; gap: 11px;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line); background: var(--surface);
+}
 .sheet-actions .btn-danger-outline { width: 112px; flex: none; }
 .sheet-actions .btn-gold { flex: 1; }
 
@@ -329,11 +337,18 @@ dialog {
   background: var(--surface); color: var(--fg);
   width: min(400px, 92vw);
   border: 1px solid var(--line);
+  margin: auto;             /* *{margin:0} 리셋 무력화 → 화면 중앙 */
+  max-height: 88dvh; overflow-y: auto;
 }
 dialog::backdrop { background: rgba(0,0,0,.55); }
 dialog h2 { font-weight: 700; font-size: 20px; margin-bottom: 4px; }
 .dlg-section-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent); margin: 16px 2px 8px; }
 .dlg-section-title:first-of-type { margin-top: 12px; }
+
+/* 금고 이름 입력 */
+.name-row { display: flex; gap: 8px; }
+.name-row input { flex: 1; }
+.name-row .btn-gold { width: auto; flex: none; padding: 0 18px; height: auto; }
 
 /* 설정 카드형 리스트 */
 .set-card { background: var(--field); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
