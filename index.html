@@ -9,8 +9,8 @@
   <title>Goblin Keeper</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="assets/icon-goblin-front.png" />
-  <link rel="apple-touch-icon" href="assets/icon-goblin-front.png" />
+  <link rel="icon" href="assets/gk-appicon.png" />
+  <link rel="apple-touch-icon" href="assets/gk-appicon.png" />
   <script src="crypto.js" defer></script>
   <script src="db.js" defer></script>
   <script src="bio.js" defer></script>
@@ -25,14 +25,8 @@
   <!-- ============ 최초 설정 ============ -->
   <section class="screen" id="screen-setup">
     <div class="center-wrap">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:11px">
-        <div class="avatar-ring" style="width:116px;height:116px">
-          <img src="assets/icon-goblin-front.png" alt="문지기" />
-        </div>
-        <div style="text-align:center">
-          <div class="serif brand-title">Goblin Keeper</div>
-          <div class="brand-badge">GOBLIN KEEPER</div>
-        </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <img class="gk-logo" src="assets/gk-logo.png" alt="Goblin Keeper" />
         <div style="color:var(--muted);font-size:13px" data-i18n="setup.badge"></div>
       </div>
 
@@ -76,13 +70,8 @@
   <!-- ============ 잠금 해제 ============ -->
   <section class="screen" id="screen-unlock">
     <div class="center-wrap" style="align-items:center;text-align:center">
-      <div class="brand-badge" style="margin-top:6px">GOBLIN KEEPER</div>
-      <div class="lock-hero">
-        <div class="glow"></div>
-        <div class="avatar-ring"><img src="assets/icon-goblin-stern.png" alt="근엄한 문지기" /></div>
-        <div class="lock-badge"><span class="ic" data-icon="lock" data-size="26"></span></div>
-      </div>
-      <div class="serif" style="font-weight:700;font-size:22px" data-i18n="lock.title"></div>
+      <img class="gk-logo gk-logo-lock" src="assets/gk-logo.png" alt="Goblin Keeper" />
+      <div class="serif" style="font-weight:700;font-size:20px" data-i18n="lock.title"></div>
       <div style="color:var(--muted);font-size:13px;margin-top:-6px;margin-bottom:6px" data-i18n="lock.subtitle"></div>
 
       <form id="form-unlock" class="stack" style="width:100%">
@@ -107,7 +96,7 @@
   <!-- ============ 메인 (금고 내부) ============ -->
   <section class="screen" id="screen-main">
     <header>
-      <div class="avatar-sm"><img src="assets/icon-goblin-stern.png" alt="문지기" /></div>
+      <div class="desk-goblin"><img src="assets/gk-desk.png" alt="문지기" /></div>
       <div class="head-text">
         <div class="serif name">Goblin Keeper</div>
         <div class="sub" id="head-sub"></div>

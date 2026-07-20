@@ -1,5 +1,5 @@
 // sw.js — 오프라인 캐시 (정적 파일만, 민감 데이터는 절대 캐시하지 않음)
-const CACHE = "goblin-keeper-v7";
+const CACHE = "goblin-keeper-v8";
 const ASSETS = [
   ".",
   "index.html",
@@ -13,8 +13,9 @@ const ASSETS = [
   "types.js",
   "app.js",
   "manifest.webmanifest",
-  "assets/icon-goblin-front.png",
-  "assets/icon-goblin-stern.png",
+  "assets/gk-appicon.png",
+  "assets/gk-desk.png",
+  "assets/gk-logo.png",
 ];
 
 self.addEventListener("install", (e) => {

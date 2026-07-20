@@ -8,7 +8,7 @@
   "theme_color": "#141E18",
   "icons": [
     {
-      "src": "assets/icon-goblin-front.png",
+      "src": "assets/gk-appicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
