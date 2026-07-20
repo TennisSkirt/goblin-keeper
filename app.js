@@ -8,6 +8,7 @@ const state = {
   vaultKey: null,     // 메모리에만 존재. 잠그면 null
   items: [],          // [{id, data, updatedAt}] 복호화된 상태 (잠금 해제 중에만)
   editingId: null,
+  filter: "all",      // 종류 필터: all | fav | <type>
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -50,7 +51,7 @@ async function loadAllItems() {
   state.items = [];
   for (const rec of records) {
     try {
-      const data = await decryptItem(state.vaultKey, rec);
+      const data = normalizeItem(await decryptItem(state.vaultKey, rec));
       state.items.push({ id: rec.id, data, updatedAt: rec.updatedAt });
     } catch (e) {
       // 개별 항목이 손상돼도 입장 자체는 막지 않는다 (해당 항목만 건너뜀)
@@ -132,6 +133,7 @@ async function handleBioUnlock() {
 
 function enterMain() {
   $("#search").value = "";
+  state.filter = "all";
   bannerDismissed = false;
   renderList();
   renderBackupBanner();
@@ -163,63 +165,248 @@ async function resetVault() {
   showScreen("setup");
 }
 
+// ---------- 비밀번호류 / 재사용 ----------
+function passwordsOf(data) {
+  const f = data.fields || {};
+  const out = [];
+  if (f.password) out.push(f.password);
+  if (f.wifiPassword) out.push(f.wifiPassword);
+  return out;
+}
+let reusedSet = new Set();
+function computeReusedSet() {
+  const counts = new Map();
+  for (const it of state.items)
+    for (const pw of passwordsOf(it.data)) counts.set(pw, (counts.get(pw) || 0) + 1);
+  reusedSet = new Set([...counts].filter(([, v]) => v >= 2).map(([k]) => k));
+}
+function reuseCountFor(pw, excludeId) {
+  let n = 0;
+  for (const it of state.items)
+    if (it.id !== excludeId && passwordsOf(it.data).includes(pw)) n++;
+  return n;
+}
+
+// 목록 카드의 부제·대표 복사값
+function itemSubText(data) {
+  const f = data.fields || {};
+  switch (data.type) {
+    case "login": return f.username || t("main.savedPw");
+    case "email": return f.email || t("main.savedPw");
+    case "card": return f.cardNumber ? "•••• " + f.cardNumber.replace(/\s/g, "").slice(-4) : t("type.card");
+    case "membership": return f.memberNumber || t("type.membership");
+    case "bank": return f.bankName || t("type.bank");
+    case "wifi": return f.ssid || t("type.wifi");
+    case "note": return (data.memo || f.body || "").slice(0, 24) || t("type.note");
+    case "id": return f.idKind || t("type.id");
+    default: return t("main.savedPw");
+  }
+}
+function primaryValue(data) {
+  const f = data.fields || {};
+  return f.password || f.cardNumber || f.memberNumber || f.accountNumber ||
+    f.wifiPassword || f.idNumber || f.body || "";
+}
+
+// ---------- 종류 필터 칩 ----------
+function renderTypeFilter() {
+  const wrap = $("#type-filter");
+  const counts = {};
+  let favCount = 0;
+  for (const it of state.items) {
+    counts[it.data.type] = (counts[it.data.type] || 0) + 1;
+    if (it.data.fav) favCount++;
+  }
+  const chips = [`<button type="button" class="chip" data-filter="all">${t("filter.all")} ${state.items.length}</button>`];
+  if (favCount) chips.push(`<button type="button" class="chip" data-filter="fav">★ ${t("filter.fav")} ${favCount}</button>`);
+  for (const k of TYPE_ORDER)
+    if (counts[k]) chips.push(`<button type="button" class="chip" data-filter="${k}">${t("type." + k)} ${counts[k]}</button>`);
+  wrap.innerHTML = chips.join("");
+  for (const c of wrap.querySelectorAll(".chip"))
+    c.classList.toggle("active", c.dataset.filter === state.filter);
+  wrap.style.display = state.items.length ? "flex" : "none";
+}
+
 // ---------- 목록 ----------
 function renderList() {
+  computeReusedSet();
   const q = $("#search").value.trim().toLowerCase();
   const list = $("#list");
   list.innerHTML = "";
-  const items = state.items
-    .filter((it) => !q ||
-      (it.data.title || "").toLowerCase().includes(q) ||
-      (it.data.username || "").toLowerCase().includes(q) ||
-      (it.data.url || "").toLowerCase().includes(q))
-    .sort((a, b) => (a.data.title || "").localeCompare(b.data.title || ""));
+
+  const matches = (it) => {
+    if (state.filter === "fav") { if (!it.data.fav) return false; }
+    else if (state.filter !== "all" && it.data.type !== state.filter) return false;
+    if (!q) return true;
+    const hay = [it.data.title, ...Object.values(it.data.fields || {}),
+      ...(it.data.custom || []).map((c) => c.label)].join(" ").toLowerCase();
+    return hay.includes(q);
+  };
+
+  const items = state.items.filter(matches).sort((a, b) => {
+    if (!!b.data.fav !== !!a.data.fav) return a.data.fav ? -1 : 1; // 즐겨찾기 먼저
+    return (a.data.title || "").localeCompare(b.data.title || "");
+  });
 
   $("#empty").style.display = state.items.length === 0 ? "block" : "none";
   $("#head-sub").textContent = state.items.length
     ? t("main.statusCount", { n: state.items.length })
     : t("main.statusOpen");
+  renderTypeFilter();
 
   for (const it of items) {
-    const b = badgeFor(it.data.title);
+    const tdef = ITEM_TYPES[it.data.type] || ITEM_TYPES.login;
+    const exp = itemExpiryState(it.data);
+    const reused = passwordsOf(it.data).some((p) => reusedSet.has(p));
+    let warn = "";
+    if (exp === "expired") warn = `<span class="warn-ic danger" title="${t("warn.expired")}">${iconSvg("alert", 15)}</span>`;
+    else if (exp === "soon") warn = `<span class="warn-ic gold" title="${t("warn.expirySoon")}">${iconSvg("alert", 15)}</span>`;
+    if (reused) warn += `<span class="warn-ic danger" title="${t("warn.reuse")}">${iconSvg("alert", 15)}</span>`;
+    const star = it.data.fav ? `<span class="fav-ic">${iconSvg("star-fill", 14)}</span>` : "";
+
     const li = document.createElement("li");
     li.className = "item";
     li.innerHTML = `
-      <div class="badge"></div>
+      <div class="badge type-badge">${iconSvg(tdef.icon, 22)}</div>
       <div class="item-main">
-        <div class="item-title"></div>
+        <div class="item-title-row"><span class="item-title"></span>${star}${warn}</div>
         <div class="item-sub"></div>
       </div>
-      <button class="btn-copy" title="비밀번호 복사">${iconSvg("copy", 19)}</button>
+      <button class="btn-copy" title="복사">${iconSvg("copy", 19)}</button>
       <span class="ic chev">${iconSvg("chevron", 22)}</span>`;
-    const badge = li.querySelector(".badge");
-    badge.textContent = b.letter;
-    badge.style.background = b.color;
+    li.querySelector(".badge").style.background = tdef.color;
     li.querySelector(".item-title").textContent = it.data.title || "(제목 없음)";
-    li.querySelector(".item-sub").textContent = it.data.username || t("main.savedPw");
+    li.querySelector(".item-sub").textContent = itemSubText(it.data);
     li.querySelector(".item-main").addEventListener("click", () => openEditor(it.id));
     li.querySelector(".btn-copy").addEventListener("click", (e) => {
       e.stopPropagation();
-      copyToClipboard(it.data.password, it.data.title || "비밀번호");
+      copyToClipboard(primaryValue(it.data), it.data.title || t("label.password"));
     });
     list.appendChild(li);
   }
 }
 
-// ---------- 항목 편집 ----------
-function openEditor(id) {
+// ---------- 종류 선택 (새 예치품) ----------
+function openPicker() {
+  const grid = $("#picker-grid");
+  grid.innerHTML = TYPE_ORDER.map((k) =>
+    `<button type="button" class="picker-item" data-type="${k}">
+       <span class="picker-ic" style="background:${ITEM_TYPES[k].color}">${iconSvg(ITEM_TYPES[k].icon, 22)}</span>
+       <span>${t("type." + k)}</span>
+     </button>`).join("");
+  $("#dlg-picker").showModal();
+}
+
+// ---------- 항목 편집 (종류별 동적) ----------
+let editorType = "login";
+let editorFav = false;
+
+function fieldRowHtml(f) {
+  const label = t("f." + f.k);
+  const sensitive = f.kind === "secret";
+  const mono = sensitive || f.kind === "text-mmYY" || f.kind === "text-date";
+  const cls = mono ? "mono" : "";
+  const ph = f.kind === "text-mmYY" ? t("ph.mmYY") : f.kind === "text-date" ? t("ph.date") : "";
+  let input, actions = "";
+  if (f.kind === "multiline") {
+    input = `<textarea id="fld-${f.k}"></textarea>`;
+  } else if (f.kind === "select-barcode") {
+    input = `<select id="fld-${f.k}" class="fld-select">` +
+      BARCODE_FORMATS.map((fmt) => `<option value="${fmt}">${t("bc." + fmt)}</option>`).join("") + `</select>`;
+  } else {
+    const type = sensitive ? "password" : "text";
+    input = `<input id="fld-${f.k}" class="${cls}" type="${type}" placeholder="${ph}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />`;
+    if (sensitive) actions += `<button type="button" data-act="eye">${iconSvg("eye", 20)}</button>`;
+    if (f.gen) actions += `<button type="button" data-act="gen">${iconSvg("dice", 20)}</button>`;
+    actions += `<button type="button" data-act="copy">${iconSvg("copy", 19)}</button>`;
+  }
+  return `<div class="field" data-key="${f.k}">
+    <label>${label}</label>
+    <div class="field-input">${input}${actions ? `<div class="field-actions">${actions}</div>` : ""}</div>
+  </div>`;
+}
+
+function renderEditorFields(type, data) {
+  const wrap = $("#editor-fields");
+  wrap.innerHTML = ITEM_TYPES[type].fields.map(fieldRowHtml).join("");
+  for (const f of ITEM_TYPES[type].fields) {
+    const el = $("#fld-" + f.k);
+    if (!el) continue;
+    if (f.kind === "select-barcode") el.value = data.fields[f.k] || "code128";
+    else el.value = data.fields[f.k] || "";
+  }
+}
+
+function addCustomRow(label, value) {
+  const row = document.createElement("div");
+  row.className = "custom-row";
+  row.innerHTML = `
+    <input class="cf-label" placeholder="${t("custom.labelPh")}" autocapitalize="off" autocorrect="off" spellcheck="false" />
+    <div class="field-input">
+      <input class="cf-value mono" type="password" placeholder="${t("custom.valuePh")}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <div class="field-actions">
+        <button type="button" data-cact="eye">${iconSvg("eye", 19)}</button>
+        <button type="button" data-cact="copy">${iconSvg("copy", 18)}</button>
+        <button type="button" data-cact="remove">${iconSvg("trash", 18)}</button>
+      </div>
+    </div>`;
+  row.querySelector(".cf-label").value = label || "";
+  row.querySelector(".cf-value").value = value || "";
+  $("#editor-custom").appendChild(row);
+}
+
+function renderBarcodePreview() {
+  const box = $("#editor-barcode");
+  box.innerHTML = "";
+  if (editorType !== "membership") return;
+  const num = ($("#fld-memberNumber")?.value || "").trim();
+  const fmt = $("#fld-barcodeFormat")?.value || "code128";
+  if (!num) return;
+  const svg = makeBarcode(num, fmt);
+  box.innerHTML = svg
+    ? `<div class="barcode-box">${svg}<div class="barcode-hint">${t("barcode.hint")}</div></div>`
+    : `<div class="barcode-invalid">${t("barcode.invalid")}</div>`;
+}
+
+function updateFavBtn() {
+  $("#btn-fav").classList.toggle("active", editorFav);
+  const ic = $("#btn-fav").firstElementChild; // .ic 스팬
+  if (ic) ic.innerHTML = iconSvg(editorFav ? "star-fill" : "star", 20);
+}
+
+function updateReuseWarn(data, excludeId) {
+  const warn = $("#reuse-warn");
+  const pw = (data.fields || {}).password || (data.fields || {}).wifiPassword;
+  const others = pw ? reuseCountFor(pw, excludeId) : 0;
+  if (others >= 1) {
+    $("#reuse-warn-text").textContent = t("warn.reuseFull", { n: others + 1 });
+    warn.style.display = "flex";
+  } else warn.style.display = "none";
+}
+
+function openEditor(id, forcedType) {
   state.editingId = id || null;
   const it = id ? state.items.find((x) => x.id === id) : null;
-  $("#editor-title").textContent = it ? t("editor.editTitle") : t("editor.newTitle");
-  const b = badgeFor(it?.data.title || "새");
+  const data = it ? it.data
+    : { type: forcedType || "login", title: "", fav: false, fields: {}, custom: [], memo: "" };
+  editorType = data.type;
+  editorFav = !!data.fav;
+
+  const tdef = ITEM_TYPES[editorType];
   const badge = $("#editor-badge");
-  badge.textContent = b.letter;
-  badge.style.background = it ? b.color : "var(--bronze)";
-  $("#f-title").value = it?.data.title || "";
-  $("#f-username").value = it?.data.username || "";
-  $("#f-password").value = it?.data.password || "";
-  $("#f-url").value = it?.data.url || "";
-  $("#f-memo").value = it?.data.memo || "";
+  badge.innerHTML = iconSvg(tdef.icon, 22);
+  badge.style.background = tdef.color;
+  $("#editor-title").textContent = t("type." + editorType);
+  $("#f-title").value = data.title || "";
+  $("#f-memo").value = data.memo || "";
+
+  renderEditorFields(editorType, data);
+  $("#editor-custom").innerHTML = "";
+  (data.custom || []).forEach((c) => addCustomRow(c.label, c.value));
+  updateFavBtn();
+  updateReuseWarn(data, state.editingId);
+  renderBarcodePreview();
+
   $("#btn-delete").style.display = it ? "inline-block" : "none";
   $("#editor").classList.add("open");
   $("#f-title").focus();
@@ -228,21 +415,34 @@ function openEditor(id) {
 function closeEditor() {
   $("#editor").classList.remove("open");
   state.editingId = null;
-  // 복호화된 값이 DOM에 남지 않도록 편집 필드 비우기
-  for (const id of ["#f-title", "#f-username", "#f-password", "#f-url", "#f-memo"])
-    $(id).value = "";
-  const pw = $("#f-password");
-  if (pw.type === "text") toggleEye(pw, $("#btn-toggle-pw")); // 다시 마스킹 상태로
+  $("#f-title").value = "";
+  $("#f-memo").value = "";
+  $("#editor-fields").innerHTML = "";   // 복호화된 값 제거
+  $("#editor-custom").innerHTML = "";
+  $("#editor-barcode").innerHTML = "";
+  $("#reuse-warn").style.display = "none";
 }
 
 async function saveItem(e) {
   e.preventDefault();
   if (!state.vaultKey) return;
+  const fields = {};
+  for (const f of ITEM_TYPES[editorType].fields) {
+    const el = $("#fld-" + f.k);
+    fields[f.k] = el ? el.value : "";
+  }
+  const custom = [];
+  for (const row of document.querySelectorAll("#editor-custom .custom-row")) {
+    const label = row.querySelector(".cf-label").value.trim();
+    const value = row.querySelector(".cf-value").value;
+    if (label || value) custom.push({ label, value });
+  }
   const data = {
+    type: editorType,
     title: $("#f-title").value.trim(),
-    username: $("#f-username").value.trim(),
-    password: $("#f-password").value,
-    url: $("#f-url").value.trim(),
+    fav: editorFav,
+    fields,
+    custom,
     memo: $("#f-memo").value,
   };
   const id = state.editingId || crypto.randomUUID();
@@ -518,21 +718,62 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#form-setup").addEventListener("submit", handleSetup);
   $("#form-unlock").addEventListener("submit", handleUnlock);
   $("#form-editor").addEventListener("submit", saveItem);
-  $("#btn-add").addEventListener("click", () => openEditor(null));
+  $("#btn-add").addEventListener("click", openPicker);
   $("#btn-lock").addEventListener("click", lockVault);
   $("#btn-close-editor").addEventListener("click", closeEditor);
   $("#btn-delete").addEventListener("click", deleteCurrentItem);
   $("#search").addEventListener("input", renderList);
-  $("#btn-gen").addEventListener("click", () => {
-    const f = $("#f-password");
-    f.value = generatePassword(20);
-    if (f.type === "password") toggleEye(f, $("#btn-toggle-pw"));
-    showToast(t("toast.genPw"));
+
+  // 종류 선택 → 편집 열기
+  $("#picker-grid").addEventListener("click", (e) => {
+    const btn = e.target.closest(".picker-item");
+    if (!btn) return;
+    $("#dlg-picker").close();
+    openEditor(null, btn.dataset.type);
   });
-  $("#btn-toggle-pw").addEventListener("click", () =>
-    toggleEye($("#f-password"), $("#btn-toggle-pw")));
-  $("#btn-copy-pw").addEventListener("click", () =>
-    copyToClipboard($("#f-password").value, "비밀번호"));
+
+  // 종류 필터 칩
+  $("#type-filter").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    state.filter = chip.dataset.filter;
+    renderList();
+  });
+
+  // 편집: 동적 필드 액션 (눈/생성/복사) + 바코드 실시간 갱신
+  const barcodeRefresh = () => { if (editorType === "membership") renderBarcodePreview(); };
+  $("#editor-fields").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    const field = btn.closest(".field");
+    const input = field.querySelector("input, textarea, select");
+    const act = btn.dataset.act;
+    if (act === "eye") toggleEye(input, btn);
+    else if (act === "copy") copyToClipboard(input.value, t("f." + field.dataset.key));
+    else if (act === "gen") {
+      input.value = generatePassword(20);
+      if (input.type === "password") toggleEye(input, field.querySelector('[data-act="eye"]'));
+      showToast(t("toast.genPw"));
+    }
+  });
+  $("#editor-fields").addEventListener("input", barcodeRefresh);
+  $("#editor-fields").addEventListener("change", barcodeRefresh);
+
+  // 커스텀 필드
+  $("#btn-add-custom").addEventListener("click", () => addCustomRow("", ""));
+  $("#editor-custom").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-cact]");
+    if (!btn) return;
+    const row = btn.closest(".custom-row");
+    const input = row.querySelector(".cf-value");
+    const act = btn.dataset.cact;
+    if (act === "eye") toggleEye(input, btn);
+    else if (act === "copy") copyToClipboard(input.value, row.querySelector(".cf-label").value || t("label.password"));
+    else if (act === "remove") row.remove();
+  });
+
+  // 즐겨찾기 토글
+  $("#btn-fav").addEventListener("click", () => { editorFav = !editorFav; updateFavBtn(); });
 
   // 눈 아이콘 토글 (설정/잠금 화면)
   for (const btn of document.querySelectorAll(".eye-btn")) {

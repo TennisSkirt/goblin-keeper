@@ -1,5 +1,5 @@
 // sw.js — 오프라인 캐시 (정적 파일만, 민감 데이터는 절대 캐시하지 않음)
-const CACHE = "goblin-keeper-v6";
+const CACHE = "goblin-keeper-v7";
 const ASSETS = [
   ".",
   "index.html",
@@ -9,6 +9,8 @@ const ASSETS = [
   "bio.js",
   "icons.js",
   "i18n.js",
+  "barcode.js",
+  "types.js",
   "app.js",
   "manifest.webmanifest",
   "assets/icon-goblin-front.png",
