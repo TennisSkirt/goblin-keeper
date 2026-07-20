@@ -39,6 +39,7 @@ function reqValue(req, holder) {
 const vaultDB = {
   getMeta: () => tx("meta", "readonly", (s) => reqValue(s.get("meta"), {})),
   setMeta: (meta) => tx("meta", "readwrite", (s) => { s.put(meta, "meta"); return {}; }),
+  clearMeta: () => tx("meta", "readwrite", (s) => { s.clear(); return {}; }), // meta·backup·bio 전체 삭제
   getAllItems: () => tx("items", "readonly", (s) => reqValue(s.getAll(), {})),
   putItem: (item) => tx("items", "readwrite", (s) => { s.put(item); return {}; }),
   deleteItem: (id) => tx("items", "readwrite", (s) => { s.delete(id); return {}; }),

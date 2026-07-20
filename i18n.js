@@ -20,6 +20,9 @@ const I18N = {
     "lock.pwPlaceholder": "암구호",
     "lock.submit": "잠금 해제",
     "lock.bio": "지문 / Face ID로 신원 확인",
+    "lock.forgot": "암구호를 잊으셨나요? 금고 초기화",
+    "reset.confirm": "⚠️ 마스터 암구호는 복구할 수 없습니다.\n\n금고를 완전히 초기화하고 처음부터 새로 시작할까요?\n저장된 모든 항목이 삭제됩니다. (백업 파일이 있으면 나중에 복원 가능)",
+    "reset.done": "금고가 초기화되었습니다. 새 암구호를 정하세요.",
 
     "main.search": "검색 또는 웹사이트 입력",
     "main.deposits": "예치품",
@@ -127,6 +130,9 @@ const I18N = {
     "lock.pwPlaceholder": "合言葉",
     "lock.submit": "ロック解除",
     "lock.bio": "指紋 / Face ID で本人確認",
+    "lock.forgot": "合言葉をお忘れですか？金庫をリセット",
+    "reset.confirm": "⚠️ マスター合言葉は復元できません。\n\n金庫を完全にリセットして最初からやり直しますか？\n保存された項目はすべて削除されます。（バックアップがあれば後で復元できます）",
+    "reset.done": "金庫をリセットしました。新しい合言葉を決めてください。",
 
     "main.search": "検索またはサイト名を入力",
     "main.deposits": "預かり品",

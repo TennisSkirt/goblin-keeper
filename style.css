@@ -179,10 +179,19 @@ label { font-weight: 500; font-size: 13px; color: var(--muted); margin-bottom: 7
 }
 
 /* ---------- 메인(금고 내부) ---------- */
+/* 메인: 헤더 고정 + 목록만 스크롤 (울렁임 방지) */
+#screen-main.active { height: 100dvh; overflow: hidden; }
+.main-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 header {
   display: flex; align-items: center; gap: 11px;
   padding: 14px 18px 12px;
-  position: sticky; top: 0; background: var(--bg); z-index: 5;
+  flex: none; background: var(--bg); z-index: 5;
 }
 header .avatar-sm {
   width: 40px; height: 40px; border-radius: 12px; overflow: hidden;

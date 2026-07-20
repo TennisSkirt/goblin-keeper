@@ -49,8 +49,13 @@ async function loadAllItems() {
   const records = await vaultDB.getAllItems();
   state.items = [];
   for (const rec of records) {
-    const data = await decryptItem(state.vaultKey, rec);
-    state.items.push({ id: rec.id, data, updatedAt: rec.updatedAt });
+    try {
+      const data = await decryptItem(state.vaultKey, rec);
+      state.items.push({ id: rec.id, data, updatedAt: rec.updatedAt });
+    } catch (e) {
+      // 개별 항목이 손상돼도 입장 자체는 막지 않는다 (해당 항목만 건너뜀)
+      console.warn("항목 복호화 실패, 건너뜀:", rec.id);
+    }
   }
 }
 
@@ -86,11 +91,16 @@ async function handleUnlock(e) {
   setBusy("#unlock-submit", true);
   try {
     const meta = await vaultDB.getMeta();
-    state.vaultKey = await unlockVault(pw, meta);
-    await loadAllItems();
+    let key;
+    try {
+      key = await unlockVault(pw, meta); // 오직 이 단계 실패 = 암구호 오류
+    } catch {
+      err.textContent = t("err.wrongPw");
+      return;
+    }
+    state.vaultKey = key;
+    await loadAllItems(); // 개별 항목 실패는 내부에서 건너뜀 → 입장은 됨
     enterMain();
-  } catch {
-    err.textContent = t("err.wrongPw");
   } finally {
     setBusy("#unlock-submit", false);
     $("#unlock-pw").value = "";
@@ -137,6 +147,20 @@ function lockVault() {
   closeEditor();
   $("#list").innerHTML = "";
   showScreen("unlock");
+}
+
+// ---------- 금고 초기화 (암구호 분실 시 새로 시작) ----------
+async function resetVault() {
+  if (!confirm(t("reset.confirm"))) return;
+  await vaultDB.clearMeta();
+  await vaultDB.clearItems();
+  state.vaultKey = null;
+  state.items = [];
+  $("#unlock-pw").value = "";
+  $("#unlock-error").textContent = "";
+  alert(t("reset.done"));
+  renderStrength("");
+  showScreen("setup");
 }
 
 // ---------- 목록 ----------
@@ -522,6 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#dlg-settings").showModal();
   });
   $("#btn-bio-unlock").addEventListener("click", handleBioUnlock);
+  $("#btn-forgot").addEventListener("click", resetVault);
   $("#form-bio").addEventListener("submit", enableBio);
   $("#banner-backup").addEventListener("click", exportBackup);
   $("#banner-dismiss").addEventListener("click", () => {

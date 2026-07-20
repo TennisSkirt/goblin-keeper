@@ -46,7 +46,7 @@
         <div>
           <label for="setup-pw" data-i18n="setup.pwLabel"></label>
           <div class="input-eye">
-            <input type="password" id="setup-pw" class="mono" autocomplete="new-password" required />
+            <input type="password" id="setup-pw" class="mono" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required />
             <button type="button" class="eye-btn" data-eye="setup-pw"><span class="ic" data-icon="eye" data-size="22"></span></button>
           </div>
           <div id="pw-strength" style="display:flex;gap:5px;margin-top:9px;align-items:center"></div>
@@ -54,7 +54,7 @@
         <div>
           <label for="setup-pw2" data-i18n="setup.pw2Label"></label>
           <div class="input-eye">
-            <input type="password" id="setup-pw2" class="mono" autocomplete="new-password" required />
+            <input type="password" id="setup-pw2" class="mono" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required />
             <button type="button" class="eye-btn" data-eye="setup-pw2"><span class="ic" data-icon="eye" data-size="22"></span></button>
           </div>
         </div>
@@ -86,7 +86,8 @@
       <form id="form-unlock" class="stack" style="width:100%">
         <div class="input-eye">
           <input type="password" id="unlock-pw" class="mono" data-i18n-ph="lock.pwPlaceholder"
-                 autocomplete="current-password" required style="text-align:center;letter-spacing:2px" />
+                 autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false"
+                 required style="text-align:center;letter-spacing:2px" />
           <button type="button" class="eye-btn" data-eye="unlock-pw"><span class="ic" data-icon="eye" data-size="22"></span></button>
         </div>
         <div class="error" id="unlock-error" style="text-align:center"></div>
@@ -96,6 +97,7 @@
         <button type="button" class="btn-ghost" id="btn-bio-unlock" style="display:none">
           <span class="ic" data-icon="fingerprint" data-size="22"></span><span data-i18n="lock.bio"></span>
         </button>
+        <button type="button" class="link-btn" id="btn-forgot" data-i18n="lock.forgot" style="margin-top:16px"></button>
       </form>
     </div>
   </section>
@@ -112,24 +114,26 @@
       <button class="icon-btn gold" id="btn-lock" title="잠그기"><span class="ic" data-icon="lock" data-size="21"></span></button>
     </header>
 
-    <div class="search-wrap">
-      <span class="ic" data-icon="search" data-size="22"></span>
-      <input type="search" id="search" data-i18n-ph="main.search" />
-    </div>
-
-    <div id="backup-banner" class="banner" style="display:none">
-      <span class="ic" data-icon="key" data-size="24"></span>
-      <div class="banner-text">
-        <b data-i18n="banner.title"></b>
-        <span id="backup-banner-text"></span>
+    <div class="main-scroll">
+      <div class="search-wrap">
+        <span class="ic" data-icon="search" data-size="22"></span>
+        <input type="search" id="search" data-i18n-ph="main.search" />
       </div>
-      <button class="btn-mini" id="banner-backup" data-i18n="banner.mini"></button>
-      <button class="btn-x" id="banner-dismiss" title="닫기"><span class="ic" data-icon="x" data-size="18"></span></button>
-    </div>
 
-    <div class="section-label" data-i18n="main.deposits"></div>
-    <div id="empty" data-i18n-html="main.empty"></div>
-    <ul id="list"></ul>
+      <div id="backup-banner" class="banner" style="display:none">
+        <span class="ic" data-icon="key" data-size="24"></span>
+        <div class="banner-text">
+          <b data-i18n="banner.title"></b>
+          <span id="backup-banner-text"></span>
+        </div>
+        <button class="btn-mini" id="banner-backup" data-i18n="banner.mini"></button>
+        <button class="btn-x" id="banner-dismiss" title="닫기"><span class="ic" data-icon="x" data-size="18"></span></button>
+      </div>
+
+      <div class="section-label" data-i18n="main.deposits"></div>
+      <div id="empty" data-i18n-html="main.empty"></div>
+      <ul id="list"></ul>
+    </div>
     <button id="btn-add" title="새 예치품"><span class="ic" data-icon="plus" data-size="32"></span></button>
 
     <!-- 편집 바텀시트 -->
@@ -150,7 +154,7 @@
 
         <label for="f-password" data-i18n="editor.password"></label>
         <div class="pw-row">
-          <input id="f-password" class="mono" type="password" autocomplete="off" />
+          <input id="f-password" class="mono" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
           <div class="pw-actions">
             <button type="button" class="muted" id="btn-toggle-pw" title="표시"><span class="ic" data-icon="eye" data-size="20"></span></button>
             <button type="button" id="btn-gen" title="생성"><span class="ic" data-icon="dice" data-size="20"></span></button>
@@ -235,7 +239,7 @@
     <h2 class="serif" data-i18n="bio.title"></h2>
     <p class="hint" style="margin-top:4px" data-i18n="bio.desc"></p>
     <form id="form-bio" class="stack" style="margin-top:14px">
-      <input type="password" id="bio-pw" class="mono" data-i18n-ph="bio.pwPh" autocomplete="current-password" required />
+      <input type="password" id="bio-pw" class="mono" data-i18n-ph="bio.pwPh" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required />
       <div class="error" id="bio-error"></div>
       <button type="submit" class="btn-gold" id="bio-submit"><span class="ic" data-icon="fingerprint" data-size="20"></span><span data-i18n="bio.submit"></span></button>
     </form>
@@ -246,9 +250,9 @@
   <dialog id="dlg-changepw">
     <h2 class="serif" data-i18n="cp.title"></h2>
     <form id="form-changepw" class="stack" style="margin-top:14px">
-      <input type="password" id="cp-old" class="mono" data-i18n-ph="cp.oldPh" autocomplete="current-password" required />
-      <input type="password" id="cp-new" class="mono" data-i18n-ph="cp.newPh" autocomplete="new-password" required />
-      <input type="password" id="cp-new2" class="mono" data-i18n-ph="cp.new2Ph" autocomplete="new-password" required />
+      <input type="password" id="cp-old" class="mono" data-i18n-ph="cp.oldPh" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+      <input type="password" id="cp-new" class="mono" data-i18n-ph="cp.newPh" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+      <input type="password" id="cp-new2" class="mono" data-i18n-ph="cp.new2Ph" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required />
       <div class="error" id="cp-error"></div>
       <button type="submit" class="btn-gold" id="cp-submit" data-i18n="cp.submit"></button>
     </form>
