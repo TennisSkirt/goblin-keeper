@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'" />
+  <meta name="theme-color" content="#141E18" />
+  <title>Goblin Keeper</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="assets/icon-goblin-front.png" />
+  <link rel="apple-touch-icon" href="assets/icon-goblin-front.png" />
+  <script src="crypto.js" defer></script>
+  <script src="db.js" defer></script>
+  <script src="bio.js" defer></script>
+  <script src="icons.js" defer></script>
+  <script src="i18n.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- ============ 최초 설정 ============ -->
+  <section class="screen" id="screen-setup">
+    <div class="center-wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:11px">
+        <div class="avatar-ring" style="width:116px;height:116px">
+          <img src="assets/icon-goblin-front.png" alt="문지기" />
+        </div>
+        <div style="text-align:center">
+          <div class="serif brand-title">Goblin Keeper</div>
+          <div class="brand-badge">GOBLIN KEEPER</div>
+        </div>
+        <div style="color:var(--muted);font-size:13px" data-i18n="setup.badge"></div>
+      </div>
+
+      <div class="warn-card">
+        <span class="ic" data-icon="shield-alert" data-size="22"></span>
+        <div>
+          <b data-i18n="setup.warnTitle"></b>
+          <p data-i18n="setup.warnBody"></p>
+        </div>
+      </div>
+
+      <form id="form-setup" class="stack">
+        <div>
+          <label for="setup-pw" data-i18n="setup.pwLabel"></label>
+          <div class="input-eye">
+            <input type="password" id="setup-pw" class="mono" autocomplete="new-password" required />
+            <button type="button" class="eye-btn" data-eye="setup-pw"><span class="ic" data-icon="eye" data-size="22"></span></button>
+          </div>
+          <div id="pw-strength" style="display:flex;gap:5px;margin-top:9px;align-items:center"></div>
+        </div>
+        <div>
+          <label for="setup-pw2" data-i18n="setup.pw2Label"></label>
+          <div class="input-eye">
+            <input type="password" id="setup-pw2" class="mono" autocomplete="new-password" required />
+            <button type="button" class="eye-btn" data-eye="setup-pw2"><span class="ic" data-icon="eye" data-size="22"></span></button>
+          </div>
+        </div>
+        <div class="error" id="setup-error"></div>
+        <button type="submit" class="btn-gold" id="setup-submit">
+          <span class="ic" data-icon="lock-open" data-size="22"></span><span data-i18n="setup.submit"></span>
+        </button>
+      </form>
+
+      <div class="reassure">
+        <span class="ic" data-icon="shield-check" data-size="15"></span>
+        <span data-i18n="setup.reassure"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 잠금 해제 ============ -->
+  <section class="screen" id="screen-unlock">
+    <div class="center-wrap" style="align-items:center;text-align:center">
+      <div class="brand-badge" style="margin-top:6px">GOBLIN KEEPER</div>
+      <div class="lock-hero">
+        <div class="glow"></div>
+        <div class="avatar-ring"><img src="assets/icon-goblin-stern.png" alt="근엄한 문지기" /></div>
+        <div class="lock-badge"><span class="ic" data-icon="lock" data-size="26"></span></div>
+      </div>
+      <div class="serif" style="font-weight:700;font-size:22px" data-i18n="lock.title"></div>
+      <div style="color:var(--muted);font-size:13px;margin-top:-6px;margin-bottom:6px" data-i18n="lock.subtitle"></div>
+
+      <form id="form-unlock" class="stack" style="width:100%">
+        <div class="input-eye">
+          <input type="password" id="unlock-pw" class="mono" data-i18n-ph="lock.pwPlaceholder"
+                 autocomplete="current-password" required style="text-align:center;letter-spacing:2px" />
+          <button type="button" class="eye-btn" data-eye="unlock-pw"><span class="ic" data-icon="eye" data-size="22"></span></button>
+        </div>
+        <div class="error" id="unlock-error" style="text-align:center"></div>
+        <button type="submit" class="btn-gold" id="unlock-submit">
+          <span class="ic" data-icon="lock-open" data-size="22"></span><span data-i18n="lock.submit"></span>
+        </button>
+        <button type="button" class="btn-ghost" id="btn-bio-unlock" style="display:none">
+          <span class="ic" data-icon="fingerprint" data-size="22"></span><span data-i18n="lock.bio"></span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ 메인 (금고 내부) ============ -->
+  <section class="screen" id="screen-main">
+    <header>
+      <div class="avatar-sm"><img src="assets/icon-goblin-stern.png" alt="문지기" /></div>
+      <div class="head-text">
+        <div class="serif name">Goblin Keeper</div>
+        <div class="sub" id="head-sub"></div>
+      </div>
+      <button class="icon-btn" id="btn-settings" title="설정"><span class="ic" data-icon="gear" data-size="21"></span></button>
+      <button class="icon-btn gold" id="btn-lock" title="잠그기"><span class="ic" data-icon="lock" data-size="21"></span></button>
+    </header>
+
+    <div class="search-wrap">
+      <span class="ic" data-icon="search" data-size="22"></span>
+      <input type="search" id="search" data-i18n-ph="main.search" />
+    </div>
+
+    <div id="backup-banner" class="banner" style="display:none">
+      <span class="ic" data-icon="key" data-size="24"></span>
+      <div class="banner-text">
+        <b data-i18n="banner.title"></b>
+        <span id="backup-banner-text"></span>
+      </div>
+      <button class="btn-mini" id="banner-backup" data-i18n="banner.mini"></button>
+      <button class="btn-x" id="banner-dismiss" title="닫기"><span class="ic" data-icon="x" data-size="18"></span></button>
+    </div>
+
+    <div class="section-label" data-i18n="main.deposits"></div>
+    <div id="empty" data-i18n-html="main.empty"></div>
+    <ul id="list"></ul>
+    <button id="btn-add" title="새 예치품"><span class="ic" data-icon="plus" data-size="32"></span></button>
+
+    <!-- 편집 바텀시트 -->
+    <div id="editor">
+      <form class="sheet" id="form-editor">
+        <div class="grabber"></div>
+        <div class="sheet-head">
+          <div class="badge" id="editor-badge">N</div>
+          <h2 class="serif" id="editor-title"></h2>
+          <button type="button" class="btn-x" id="btn-close-editor"><span class="ic" data-icon="x" data-size="20"></span></button>
+        </div>
+
+        <label for="f-title" data-i18n="editor.title"></label>
+        <input id="f-title" data-i18n-ph="editor.titlePh" required />
+
+        <label for="f-username" data-i18n="editor.username"></label>
+        <input id="f-username" class="mono" autocomplete="off" />
+
+        <label for="f-password" data-i18n="editor.password"></label>
+        <div class="pw-row">
+          <input id="f-password" class="mono" type="password" autocomplete="off" />
+          <div class="pw-actions">
+            <button type="button" class="muted" id="btn-toggle-pw" title="표시"><span class="ic" data-icon="eye" data-size="20"></span></button>
+            <button type="button" id="btn-gen" title="생성"><span class="ic" data-icon="dice" data-size="20"></span></button>
+            <button type="button" id="btn-copy-pw" title="복사"><span class="ic" data-icon="copy" data-size="19"></span></button>
+          </div>
+        </div>
+
+        <label for="f-url" data-i18n="editor.url"></label>
+        <input id="f-url" class="mono" inputmode="url" autocomplete="off" />
+
+        <label for="f-memo" data-i18n="editor.memo"></label>
+        <textarea id="f-memo"></textarea>
+
+        <div class="sheet-actions">
+          <button type="button" class="btn-danger-outline" id="btn-delete"><span class="ic" data-icon="trash" data-size="20"></span><span data-i18n="editor.delete"></span></button>
+          <button type="submit" class="btn-gold"><span class="ic" data-icon="box" data-size="20"></span><span data-i18n="editor.save"></span></button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ 설정 ============ -->
+  <dialog id="dlg-settings">
+    <h2 class="serif" data-i18n="settings.title"></h2>
+
+    <div class="dlg-section-title" data-i18n="settings.backupSection"></div>
+    <div class="set-card">
+      <div class="set-row">
+        <span class="ic" data-icon="history" data-size="23"></span>
+        <div class="set-text"><b data-i18n="settings.lastBackup"></b><span id="backup-status"></span></div>
+      </div>
+      <div class="set-divider"></div>
+      <div class="set-actions">
+        <button class="btn-gold" id="btn-export"><span class="ic" data-icon="share" data-size="19"></span><span data-i18n="settings.export"></span></button>
+        <label class="btn-ghost file-btn"><span class="ic" data-icon="download" data-size="19"></span><span data-i18n="settings.import"></span>
+          <input type="file" id="file-import" accept="application/json,.json" />
+        </label>
+      </div>
+      <div class="set-divider"></div>
+      <details class="backup-info">
+        <summary>
+          <span class="ic" data-icon="shield-check" data-size="18"></span>
+          <span data-i18n="backupInfo.summary"></span>
+          <span class="caret">▾</span>
+        </summary>
+        <div class="backup-info-body">
+          <p data-i18n="backupInfo.p1"></p>
+          <p data-i18n="backupInfo.p2"></p>
+          <p data-i18n="backupInfo.p3"></p>
+          <p data-i18n="backupInfo.p4"></p>
+        </div>
+      </details>
+    </div>
+
+    <div class="dlg-section-title" data-i18n="settings.securitySection"></div>
+    <div class="set-card">
+      <div class="set-row">
+        <span class="ic" data-icon="fingerprint" data-size="23"></span>
+        <div class="set-text"><b data-i18n="settings.bio"></b><span data-i18n="settings.bioDesc"></span></div>
+      </div>
+      <div class="set-divider"></div>
+      <div id="bio-settings" style="padding:13px 15px"></div>
+      <div class="set-divider"></div>
+      <button class="set-row" id="btn-open-changepw" style="width:100%;background:transparent;text-align:left">
+        <span class="ic" data-icon="key" data-size="23"></span>
+        <div class="set-text"><b data-i18n="settings.changePw"></b><span data-i18n="settings.changePwDesc"></span></div>
+        <span class="ic chev" data-icon="chevron" data-size="22" style="color:var(--muted)"></span>
+      </button>
+    </div>
+
+    <div class="dlg-section-title" data-i18n="settings.langSection"></div>
+    <div class="lang-toggle" id="lang-toggle">
+      <button type="button" data-lang="ko">한국어</button>
+      <button type="button" data-lang="ja">日本語</button>
+    </div>
+
+    <form method="dialog"><button class="dlg-close" data-i18n="common.close"></button></form>
+  </dialog>
+
+  <!-- 생체인증 켜기 -->
+  <dialog id="dlg-bio">
+    <h2 class="serif" data-i18n="bio.title"></h2>
+    <p class="hint" style="margin-top:4px" data-i18n="bio.desc"></p>
+    <form id="form-bio" class="stack" style="margin-top:14px">
+      <input type="password" id="bio-pw" class="mono" data-i18n-ph="bio.pwPh" autocomplete="current-password" required />
+      <div class="error" id="bio-error"></div>
+      <button type="submit" class="btn-gold" id="bio-submit"><span class="ic" data-icon="fingerprint" data-size="20"></span><span data-i18n="bio.submit"></span></button>
+    </form>
+    <form method="dialog"><button class="dlg-close" data-i18n="common.cancel"></button></form>
+  </dialog>
+
+  <!-- 암구호 변경 -->
+  <dialog id="dlg-changepw">
+    <h2 class="serif" data-i18n="cp.title"></h2>
+    <form id="form-changepw" class="stack" style="margin-top:14px">
+      <input type="password" id="cp-old" class="mono" data-i18n-ph="cp.oldPh" autocomplete="current-password" required />
+      <input type="password" id="cp-new" class="mono" data-i18n-ph="cp.newPh" autocomplete="new-password" required />
+      <input type="password" id="cp-new2" class="mono" data-i18n-ph="cp.new2Ph" autocomplete="new-password" required />
+      <div class="error" id="cp-error"></div>
+      <button type="submit" class="btn-gold" id="cp-submit" data-i18n="cp.submit"></button>
+    </form>
+    <form method="dialog"><button class="dlg-close" data-i18n="common.cancel"></button></form>
+  </dialog>
+
+  <div id="toast"><span class="ic" data-icon="shield-check" data-size="18"></span><span id="toast-text"></span></div>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "Goblin Keeper",
+  "short_name": "Goblin Keeper",
+  "description": "가족용 완전 로컬 비밀번호 금고",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#141E18",
+  "theme_color": "#141E18",
+  "icons": [
+    {
+      "src": "assets/icon-goblin-front.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
