@@ -89,6 +89,20 @@ async function bioEnable(vaultKey) {
   };
 }
 
+// 지문/FaceID 인증만 수행 (PRF 불필요) — 민감정보 열람 게이트용
+async function bioAssert(credentialIdB64) {
+  const id = Uint8Array.from(atob(credentialIdB64), (c) => c.charCodeAt(0));
+  await navigator.credentials.get({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ type: "public-key", id }],
+      userVerification: "required",
+      timeout: 60000,
+    },
+  });
+  return true; // 완료되면 사용자 인증 성공
+}
+
 // 생체인증으로 볼트키 복원
 async function bioUnlock(bioRecord) {
   const fromB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));

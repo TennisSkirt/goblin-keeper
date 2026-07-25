@@ -23,11 +23,11 @@ const ITEM_TYPES = {
   card: {
     icon: "card", color: "#7A5CB0",
     fields: [
-      { k: "cardNumber", kind: "secret" },
+      { k: "cardNumber", kind: "secret", reveal: "bio" },
       { k: "cardHolder", kind: "text" },
       { k: "expiry", kind: "text-mmYY", expiry: true },
-      { k: "cvc", kind: "secret" },
-      { k: "pin", kind: "secret" },
+      { k: "cvc", kind: "secret", reveal: "bio" },
+      { k: "pin", kind: "secret", reveal: "bio" },
     ],
   },
   membership: {
@@ -41,8 +41,11 @@ const ITEM_TYPES = {
     icon: "bank", color: "#2DB400",
     fields: [
       { k: "bankName", kind: "text" },
-      { k: "accountNumber", kind: "secret" },
-      { k: "accountHolder", kind: "text" },
+      { k: "bankCode", kind: "text", ph: "ph.bank4" },      // 銀行コード 4桁
+      { k: "branchCode", kind: "text", ph: "ph.bank3" },    // 支店コード 3桁
+      { k: "accountType", kind: "text", ph: "ph.accountType" }, // 普通/当座
+      { k: "accountNumber", kind: "secret", reveal: "bio" }, // 口座番号
+      { k: "accountHolder", kind: "text", ph: "ph.kana" },  // 名義(カナ)
     ],
   },
   wifi: {
@@ -62,7 +65,7 @@ const ITEM_TYPES = {
     icon: "id", color: "#C0392B",
     fields: [
       { k: "idKind", kind: "text" },
-      { k: "idNumber", kind: "secret" },
+      { k: "idNumber", kind: "secret", reveal: "bio" },
       { k: "issued", kind: "text-date" },
       { k: "expiry", kind: "text-date", expiry: true },
     ],

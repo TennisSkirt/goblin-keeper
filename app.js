@@ -326,13 +326,54 @@ function openPicker() {
 // ---------- 항목 편집 (종류별 동적) ----------
 let editorType = "login";
 let editorFav = false;
+const revealedKeys = new Set(); // 이번 편집 세션에서 지문 인증 통과한 필드
+
+// 민감정보 열람 게이트: 생체인증 → 실패/미설정 시 암구호 재입력
+async function revealGate() {
+  const bio = await vaultDB.getBio();
+  if (bio && bioSupported()) {
+    try {
+      await bioAssert(bio.credentialId); // 지문/FaceID
+      return true;
+    } catch (e) {
+      if (e.name === "NotAllowedError") return false; // 사용자가 취소
+      // 그 외 실패 → 암구호로 폴백
+    }
+  }
+  return await passwordReauth();
+}
+
+let reauthResolve = null;
+function passwordReauth() {
+  return new Promise((resolve) => {
+    reauthResolve = resolve;
+    $("#reauth-pw").value = "";
+    $("#reauth-error").textContent = "";
+    $("#dlg-reauth").showModal();
+  });
+}
+async function handleReauth(e) {
+  e.preventDefault();
+  try {
+    const meta = await vaultDB.getMeta();
+    await unlockVault($("#reauth-pw").value, meta); // 암구호 검증
+    $("#reauth-pw").value = "";
+    if (reauthResolve) { reauthResolve(true); reauthResolve = null; }
+    $("#dlg-reauth").close();
+  } catch {
+    $("#reauth-error").textContent = t("err.wrongPw");
+  }
+}
 
 function fieldRowHtml(f) {
   const label = t("f." + f.k);
   const sensitive = f.kind === "secret";
   const mono = sensitive || f.kind === "text-mmYY" || f.kind === "text-date";
   const cls = mono ? "mono" : "";
-  const ph = f.kind === "text-mmYY" ? t("ph.mmYY") : f.kind === "text-date" ? t("ph.date") : "";
+  const bioGated = f.reveal === "bio";
+  const ph = f.ph ? t(f.ph)
+    : f.kind === "text-mmYY" ? t("ph.mmYY")
+    : f.kind === "text-date" ? t("ph.date") : "";
   let input, actions = "";
   if (f.kind === "multiline") {
     input = `<textarea id="fld-${f.k}"></textarea>`;
@@ -342,11 +383,12 @@ function fieldRowHtml(f) {
   } else {
     const type = sensitive ? "password" : "text";
     input = `<input id="fld-${f.k}" class="${cls}" type="${type}" placeholder="${ph}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />`;
-    if (sensitive) actions += `<button type="button" data-act="eye">${iconSvg("eye", 20)}</button>`;
+    // 지문 게이트 필드는 눈 아이콘 대신 지문 아이콘으로 표시
+    if (sensitive) actions += `<button type="button" data-act="eye">${iconSvg(bioGated ? "fingerprint" : "eye", 20)}</button>`;
     if (f.gen) actions += `<button type="button" data-act="gen">${iconSvg("dice", 20)}</button>`;
     actions += `<button type="button" data-act="copy">${iconSvg("copy", 19)}</button>`;
   }
-  return `<div class="field" data-key="${f.k}">
+  return `<div class="field" data-key="${f.k}"${bioGated ? ' data-reveal="bio"' : ""}>
     <label>${label}</label>
     <div class="field-input">${input}${actions ? `<div class="field-actions">${actions}</div>` : ""}</div>
   </div>`;
@@ -442,6 +484,7 @@ function openEditor(id, forcedType) {
 function closeEditor() {
   $("#editor").classList.remove("open");
   state.editingId = null;
+  revealedKeys.clear();                 // 닫으면 지문 인증 상태 초기화
   $("#f-title").value = "";
   $("#f-memo").value = "";
   $("#editor-fields").innerHTML = "";   // 복호화된 값 제거
@@ -717,10 +760,12 @@ function setBusy(sel, busy) {
 }
 
 // 눈 아이콘 토글 (input type 전환 + 아이콘 스왑)
+// 버튼이 .ic 스팬을 가진 경우(정적)와 SVG를 직접 담은 경우(동적 필드) 모두 지원
 function toggleEye(input, btn) {
   const shown = input.type === "text";
   input.type = shown ? "password" : "text";
-  btn.querySelector(".ic").innerHTML = iconSvg(shown ? "eye" : "eye-off", 20);
+  const holder = btn.querySelector(".ic") || btn;
+  holder.innerHTML = iconSvg(shown ? "eye" : "eye-off", 20);
 }
 
 // 암구호 강도 미터 (설정 화면)
@@ -769,19 +814,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 편집: 동적 필드 액션 (눈/생성/복사) + 바코드 실시간 갱신
   const barcodeRefresh = () => { if (editorType === "membership") renderBarcodePreview(); };
-  $("#editor-fields").addEventListener("click", (e) => {
+  $("#editor-fields").addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-act]");
     if (!btn) return;
     const field = btn.closest(".field");
+    const key = field.dataset.key;
     const input = field.querySelector("input, textarea, select");
     const act = btn.dataset.act;
-    if (act === "eye") toggleEye(input, btn);
-    else if (act === "copy") copyToClipboard(input.value, t("f." + field.dataset.key));
-    else if (act === "gen") {
+    if (act === "gen") {
       input.value = generatePassword(20);
       if (input.type === "password") toggleEye(input, field.querySelector('[data-act="eye"]'));
       showToast(t("toast.genPw"));
+      return;
     }
+    // 지문 게이트: 보기/복사 전에 인증 (이미 통과했으면 생략)
+    if (field.dataset.reveal === "bio" && !revealedKeys.has(key)) {
+      const ok = await revealGate();
+      if (!ok) return;
+      revealedKeys.add(key);
+    }
+    if (act === "eye") toggleEye(input, btn);
+    else if (act === "copy") copyToClipboard(input.value, t("f." + key));
   });
   $("#editor-fields").addEventListener("input", barcodeRefresh);
   $("#editor-fields").addEventListener("change", barcodeRefresh);
@@ -821,6 +874,10 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#btn-bio-unlock").addEventListener("click", handleBioUnlock);
   $("#btn-forgot").addEventListener("click", resetVault);
   $("#form-bio").addEventListener("submit", enableBio);
+  $("#form-reauth").addEventListener("submit", handleReauth);
+  $("#dlg-reauth").addEventListener("close", () => {
+    if (reauthResolve) { reauthResolve(false); reauthResolve = null; } // 취소 시
+  });
   $("#banner-backup").addEventListener("click", exportBackup);
   $("#banner-dismiss").addEventListener("click", () => {
     bannerDismissed = true;

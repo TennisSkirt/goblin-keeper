@@ -237,6 +237,18 @@
     <form method="dialog"><button class="dlg-close" data-i18n="common.cancel"></button></form>
   </dialog>
 
+  <!-- 본인 확인 (민감정보 열람) -->
+  <dialog id="dlg-reauth">
+    <h2 class="serif" data-i18n="reauth.title"></h2>
+    <p class="hint" style="margin-top:4px" data-i18n="reauth.desc"></p>
+    <form id="form-reauth" class="stack" style="margin-top:14px">
+      <input type="password" id="reauth-pw" class="mono" data-i18n-ph="reauth.ph" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+      <div class="error" id="reauth-error"></div>
+      <button type="submit" class="btn-gold" data-i18n="reauth.submit"></button>
+    </form>
+    <form method="dialog"><button class="dlg-close" data-i18n="common.cancel"></button></form>
+  </dialog>
+
   <!-- 생체인증 켜기 -->
   <dialog id="dlg-bio">
     <h2 class="serif" data-i18n="bio.title"></h2>
