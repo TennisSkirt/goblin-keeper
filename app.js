@@ -253,6 +253,45 @@ function renderTypeFilter() {
   wrap.style.display = state.items.length ? "flex" : "none";
 }
 
+// 목록 카드 하나 (제목만 표시 — 아이디는 탭해서 편집화면에서)
+function renderItemLi(it) {
+  const tdef = ITEM_TYPES[it.data.type] || ITEM_TYPES.login;
+  const exp = itemExpiryState(it.data);
+  const reused = passwordsOf(it.data).some((p) => reusedSet.has(p));
+  let warn = "";
+  if (exp === "expired") warn = `<span class="warn-ic danger" title="${t("warn.expired")}">${iconSvg("alert", 15)}</span>`;
+  else if (exp === "soon") warn = `<span class="warn-ic gold" title="${t("warn.expirySoon")}">${iconSvg("alert", 15)}</span>`;
+  if (reused) warn += `<span class="warn-ic danger" title="${t("warn.reuse")}">${iconSvg("alert", 15)}</span>`;
+  const star = it.data.fav ? `<span class="fav-ic">${iconSvg("star-fill", 14)}</span>` : "";
+
+  const li = document.createElement("li");
+  li.className = "item";
+  li.innerHTML = `
+    <div class="badge type-badge">${iconSvg(tdef.icon, 22)}</div>
+    <div class="item-main">
+      <div class="item-title-row"><span class="item-title"></span>${star}${warn}</div>
+    </div>
+    <button class="btn-copy" title="복사">${iconSvg("copy", 19)}</button>
+    <span class="ic chev">${iconSvg("chevron", 22)}</span>`;
+  li.querySelector(".badge").style.background = tdef.color;
+  li.querySelector(".item-title").textContent = it.data.title || "(제목 없음)";
+  li.querySelector(".item-main").addEventListener("click", () => openEditor(it.id));
+  li.querySelector(".btn-copy").addEventListener("click", (e) => {
+    e.stopPropagation();
+    copyToClipboard(primaryValue(it.data), it.data.title || t("label.password"));
+  });
+  return li;
+}
+
+function groupHeaderLi(type, count) {
+  const li = document.createElement("li");
+  li.className = "group-header";
+  li.innerHTML =
+    `<span class="gh-ic" style="color:${ITEM_TYPES[type].color}">${iconSvg(ITEM_TYPES[type].icon, 16)}</span>` +
+    `<span>${t("type." + type)}</span><span class="gh-count">${count}</span>`;
+  return li;
+}
+
 // ---------- 목록 ----------
 function renderList() {
   computeReusedSet();
@@ -268,47 +307,33 @@ function renderList() {
       ...(it.data.custom || []).map((c) => c.label)].join(" ").toLowerCase();
     return hay.includes(q);
   };
-
-  const items = state.items.filter(matches).sort((a, b) => {
+  const byTitle = (a, b) => {
     if (!!b.data.fav !== !!a.data.fav) return a.data.fav ? -1 : 1; // 즐겨찾기 먼저
     return (a.data.title || "").localeCompare(b.data.title || "");
-  });
+  };
 
+  const filtered = state.items.filter(matches);
   $("#empty").style.display = state.items.length === 0 ? "block" : "none";
   $("#head-sub").textContent = state.items.length
     ? t("main.statusCount", { n: state.items.length })
     : t("main.statusOpen");
   renderTypeFilter();
 
-  for (const it of items) {
-    const tdef = ITEM_TYPES[it.data.type] || ITEM_TYPES.login;
-    const exp = itemExpiryState(it.data);
-    const reused = passwordsOf(it.data).some((p) => reusedSet.has(p));
-    let warn = "";
-    if (exp === "expired") warn = `<span class="warn-ic danger" title="${t("warn.expired")}">${iconSvg("alert", 15)}</span>`;
-    else if (exp === "soon") warn = `<span class="warn-ic gold" title="${t("warn.expirySoon")}">${iconSvg("alert", 15)}</span>`;
-    if (reused) warn += `<span class="warn-ic danger" title="${t("warn.reuse")}">${iconSvg("alert", 15)}</span>`;
-    const star = it.data.fav ? `<span class="fav-ic">${iconSvg("star-fill", 14)}</span>` : "";
+  // "예치품" 라벨은 그룹 헤더로 대체 → 항상 숨김
+  const label = document.querySelector("#screen-main .section-label");
+  if (label) label.style.display = "none";
 
-    const li = document.createElement("li");
-    li.className = "item";
-    li.innerHTML = `
-      <div class="badge type-badge">${iconSvg(tdef.icon, 22)}</div>
-      <div class="item-main">
-        <div class="item-title-row"><span class="item-title"></span>${star}${warn}</div>
-        <div class="item-sub"></div>
-      </div>
-      <button class="btn-copy" title="복사">${iconSvg("copy", 19)}</button>
-      <span class="ic chev">${iconSvg("chevron", 22)}</span>`;
-    li.querySelector(".badge").style.background = tdef.color;
-    li.querySelector(".item-title").textContent = it.data.title || "(제목 없음)";
-    li.querySelector(".item-sub").textContent = itemSubText(it.data);
-    li.querySelector(".item-main").addEventListener("click", () => openEditor(it.id));
-    li.querySelector(".btn-copy").addEventListener("click", (e) => {
-      e.stopPropagation();
-      copyToClipboard(primaryValue(it.data), it.data.title || t("label.password"));
-    });
-    list.appendChild(li);
+  if (state.filter === "all") {
+    // 카테고리별로 묶어서 정렬
+    for (const type of TYPE_ORDER) {
+      const group = filtered.filter((it) => it.data.type === type).sort(byTitle);
+      if (!group.length) continue;
+      list.appendChild(groupHeaderLi(type, group.length));
+      for (const it of group) list.appendChild(renderItemLi(it));
+    }
+  } else {
+    // 단일 필터(종류/즐겨찾기) → 평면 목록
+    for (const it of filtered.sort(byTitle)) list.appendChild(renderItemLi(it));
   }
 }
 

@@ -258,6 +258,15 @@ header .head-text .sub { font-size: 11px; color: var(--muted); margin-top: 2px; 
 }
 
 #list { list-style: none; padding: 0 18px 110px; display: flex; flex-direction: column; gap: 9px; }
+/* 카테고리 그룹 헤더 */
+.group-header {
+  list-style: none; display: flex; align-items: center; gap: 7px;
+  padding: 12px 4px 2px; margin-top: 4px;
+  font-size: 12px; font-weight: 700; letter-spacing: .03em; color: var(--muted);
+}
+.group-header:first-child { margin-top: 0; padding-top: 2px; }
+.group-header .gh-ic { display: inline-flex; }
+.group-header .gh-count { color: var(--muted); font-weight: 600; opacity: .65; }
 .item {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 13px; border-radius: 15px;
