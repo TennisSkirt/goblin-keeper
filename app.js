@@ -405,6 +405,9 @@ function fieldRowHtml(f) {
   } else if (f.kind === "select-barcode") {
     input = `<select id="fld-${f.k}" class="fld-select">` +
       BARCODE_FORMATS.map((fmt) => `<option value="${fmt}">${t("bc." + fmt)}</option>`).join("") + `</select>`;
+  } else if (f.kind === "select-bank") {
+    input = `<select id="fld-${f.k}" class="fld-select"><option value="">${t("bank.custom")}</option>` +
+      JAPAN_BANKS.map((b) => `<option value="${b.code}">${b.name} (${b.code})</option>`).join("") + `</select>`;
   } else {
     const type = sensitive ? "password" : "text";
     input = `<input id="fld-${f.k}" class="${cls}" type="${type}" placeholder="${ph}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />`;
@@ -425,9 +428,25 @@ function renderEditorFields(type, data) {
   for (const f of ITEM_TYPES[type].fields) {
     const el = $("#fld-" + f.k);
     if (!el) continue;
-    if (f.kind === "select-barcode") el.value = data.fields[f.k] || "code128";
-    else el.value = data.fields[f.k] || "";
+    if (f.kind === "select-barcode") {
+      el.value = data.fields[f.k] || "code128";
+    } else if (f.kind === "select-bank") {
+      const v = data.fields[f.k] || "";
+      el.value = v;
+      if (v && el.value !== v) el.add(new Option(v, v, true, true)); // 목록에 없는 코드 보존
+    } else {
+      el.value = data.fields[f.k] || "";
+    }
   }
+}
+
+// 은행 선택 시 은행명 자동 채우기
+function fillBankName() {
+  const sel = $("#fld-bankCode");
+  const nameEl = $("#fld-bankName");
+  if (!sel || !nameEl) return;
+  const bank = JAPAN_BANKS.find((b) => b.code === sel.value);
+  if (bank) nameEl.value = bank.name;
 }
 
 function addCustomRow(label, value) {
@@ -862,7 +881,10 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (act === "copy") copyToClipboard(input.value, t("f." + key));
   });
   $("#editor-fields").addEventListener("input", barcodeRefresh);
-  $("#editor-fields").addEventListener("change", barcodeRefresh);
+  $("#editor-fields").addEventListener("change", (e) => {
+    barcodeRefresh();
+    if (e.target.id === "fld-bankCode") fillBankName();
+  });
 
   // 커스텀 필드
   $("#btn-add-custom").addEventListener("click", () => addCustomRow("", ""));

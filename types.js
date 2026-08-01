@@ -40,8 +40,8 @@ const ITEM_TYPES = {
   bank: {
     icon: "bank", color: "#2DB400",
     fields: [
+      { k: "bankCode", kind: "select-bank" },               // 은행 선택(코드) → 은행명 자동
       { k: "bankName", kind: "text" },
-      { k: "bankCode", kind: "text", ph: "ph.bank4" },      // 銀行コード 4桁
       { k: "branchCode", kind: "text", ph: "ph.bank3" },    // 支店コード 3桁
       { k: "accountType", kind: "text", ph: "ph.accountType" }, // 普通/当座
       { k: "accountNumber", kind: "secret", reveal: "bio" }, // 口座番号
@@ -73,6 +73,30 @@ const ITEM_TYPES = {
 };
 
 const TYPE_ORDER = ["login", "email", "card", "membership", "bank", "wifi", "note", "id"];
+
+// 일본 주요 금융기관 코드 (金融機関コード) — 확실한 코드만. 나머지는 '직접 입력'
+const JAPAN_BANKS = [
+  { code: "0001", name: "みずほ銀行" },
+  { code: "0005", name: "三菱UFJ銀行" },
+  { code: "0009", name: "三井住友銀行" },
+  { code: "0010", name: "りそな銀行" },
+  { code: "0017", name: "埼玉りそな銀行" },
+  { code: "9900", name: "ゆうちょ銀行" },
+  { code: "0036", name: "楽天銀行" },
+  { code: "0033", name: "PayPay銀行" },
+  { code: "0034", name: "セブン銀行" },
+  { code: "0035", name: "ソニー銀行" },
+  { code: "0038", name: "住信SBIネット銀行" },
+  { code: "0039", name: "auじぶん銀行" },
+  { code: "0040", name: "イオン銀行" },
+  { code: "0042", name: "ローソン銀行" },
+  { code: "0043", name: "みんなの銀行" },
+  { code: "0310", name: "GMOあおぞらネット銀行" },
+  { code: "0397", name: "SBI新生銀行" },
+  { code: "0398", name: "あおぞら銀行" },
+  { code: "0288", name: "三菱UFJ信託銀行" },
+  { code: "0294", name: "三井住友信託銀行" },
+];
 
 // 레거시(구버전 로그인) 및 누락 필드 보정
 function normalizeItem(data) {

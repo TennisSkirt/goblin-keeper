@@ -157,6 +157,7 @@ const I18N = {
     "ph.bank3": "3자리 (예: 001)",
     "ph.accountType": "보통 / 당좌",
     "ph.kana": "예: ヤマダ タロウ",
+    "bank.custom": "직접 입력 / 기타",
 
     "reauth.title": "본인 확인",
     "reauth.desc": "민감 정보를 보려면 지문/Face ID 인증 또는 암구호가 필요해요.",
@@ -338,6 +339,7 @@ const I18N = {
     "ph.bank3": "3桁（例: 001）",
     "ph.accountType": "普通 / 当座",
     "ph.kana": "例: ヤマダ タロウ",
+    "bank.custom": "手入力 / その他",
 
     "reauth.title": "本人確認",
     "reauth.desc": "機密情報を見るには指紋/Face ID認証または合言葉が必要です。",
